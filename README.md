@@ -1,1 +1,1 @@
-# ManSys
+管理系统模板，使用Qt和Sqlite完成
