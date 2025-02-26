@@ -1,0 +1,15 @@
+<RCC>
+    <qresource prefix="/MainWindow">
+        <file>image/back3.png</file>
+        <file>image/baocun.png</file>
+        <file>image/choose.png</file>
+        <file>image/close.png</file>
+        <file>image/emoji4.png</file>
+        <file>image/emoji5.png</file>
+        <file>image/emoji6.png</file>
+        <file>image/file6.png</file>
+        <file>image/people.png</file>
+        <file>image/search.png</file>
+        <file>stylesheet/style1.qss</file>
+    </qresource>
+</RCC>

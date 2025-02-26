@@ -1,0 +1,34 @@
+QWidget {
+    background-color: #424242; /* 浅灰色背景 */
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif; /* 常用现代字体 */
+    font-size: 14px;
+	color:#ffffff;
+}
+
+QToolButton {
+    background-color: transparent;
+    border: none;
+    padding: 5px;
+    border-radius: 3px;
+    margin: 2px;
+    font-size: 16px; /* 调整工具按钮图标大小 */
+}
+
+QToolButton:hover {
+    background-color: #353535; /* Hover 时更浅的灰色 */
+}
+
+QToolButton:pressed {
+    background-color: #9e9e9e; /* Hover 时更浅的灰色 */
+}
+
+QToolButton:checked {
+    background-color: #3498db; /* 选中时蓝色 */
+    color: white;
+}
+
+QLabel {
+    font-size: 14px;
+    color: #ffffff;
+    padding: 2px;
+}
