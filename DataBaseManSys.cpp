@@ -1,5 +1,5 @@
 ﻿#include "DataBaseManSys.h"
-//#include <QMessageBox>f
+//#include <QMessageBox>
 #include <QSqlError>
 
 DataBaseManSys& DataBaseManSys::Instance()

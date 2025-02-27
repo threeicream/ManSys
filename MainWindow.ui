@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>1098</width>
     <height>600</height>
    </rect>
   </property>
@@ -73,7 +73,7 @@
           <bool>true</bool>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
          </property>
         </widget>
        </item>
@@ -102,7 +102,7 @@
           <bool>true</bool>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
          </property>
         </widget>
        </item>
@@ -131,7 +131,7 @@
           <bool>true</bool>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
          </property>
         </widget>
        </item>
@@ -160,7 +160,7 @@
           <bool>true</bool>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
          </property>
         </widget>
        </item>
@@ -189,14 +189,14 @@
           <bool>true</bool>
          </property>
          <property name="toolButtonStyle">
-          <enum>Qt::ToolButtonTextUnderIcon</enum>
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
          </property>
         </widget>
        </item>
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -212,23 +212,9 @@
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="pageStudentInfo">
-       <widget class="QPushButton" name="pushButton">
-        <property name="geometry">
-         <rect>
-          <x>420</x>
-          <y>190</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-      </widget>
+      <widget class="stuInfoWidget" name="pageStudentInfo"/>
       <widget class="QWidget" name="pageSchedule">
        <widget class="QPushButton" name="pushButton_2">
         <property name="geometry">
@@ -295,6 +281,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>stuInfoWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">stuinfowidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="MainWindow.qrc"/>
  </resources>

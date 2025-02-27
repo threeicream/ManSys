@@ -2,8 +2,8 @@
 
 #include <QMainWindow>
 #include "ui_MainWindow.h"
-class QSqlTableModel;
-class QItemSelectionModel;
+#include <QTableWidget>
+#include <QSqlQuery>
 
 class MainWindow : public QMainWindow
 {
@@ -19,10 +19,10 @@ public:
 public:
 	MainWindow(QMainWindow *parent = nullptr);
 	~MainWindow();
-
+private:
+	
 private:
 	Ui::MainWindow ui;
 private:
-	QSqlTableModel* tabmodel = nullptr;
-	QItemSelectionModel* selmodel = nullptr;
+	
 };

@@ -17,5 +17,5 @@ private:
 	~DataBaseManSys();
 private:
 	QSqlDatabase db;
-	QString dbPath = "sql/ManageSys.db";
+	QString dbPath = /*(QString)*/DATABASE_PATH /*+ "/sql/ManageSys.db"*/;
 };

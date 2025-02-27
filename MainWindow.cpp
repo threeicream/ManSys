@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include <QButtonGroup>
+#include <QSqlRecord>
 
 MainWindow::MainWindow(QMainWindow *parent)
 	: QMainWindow(parent)
@@ -21,4 +22,6 @@ MainWindow::MainWindow(QMainWindow *parent)
 
 MainWindow::~MainWindow()
 {
+
 }
+

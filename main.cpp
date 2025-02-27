@@ -5,6 +5,7 @@
 #include "DataBaseManSys.h"
 
 int main(int argc, char* argv[]) {
+	//QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);//强制使用 Qt 内置文件对话框
 	QApplication a(argc, argv);
 
 	DataBaseManSys::Instance();

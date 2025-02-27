@@ -135,7 +135,7 @@ QPushButton:disabled {
 QLineEdit {
     border: 1px solid #555;
     border-radius: 5px;
-    padding: 8px;
+    padding: 1px;
     font-size: 14px;
     background-color: #444;
     color: #eee;
@@ -412,4 +412,10 @@ QHeaderView::section {
 
 QHeaderView::section:hover {
     background-color: #444;
+}
+
+/* 分组框样式 */
+QGroupBox{
+    padding-top:25px;
+    margin-top:1ex;
 }

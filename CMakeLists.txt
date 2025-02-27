@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 找到 Qt 模块
-find_package(Qt6 COMPONENTS Core Gui Widgets Sql REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Sql Concurrent REQUIRED)
 
 # Qt 设置 (在 find_package 之后立即调用)
 qt_standard_project_setup()
@@ -17,6 +17,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+set(DATABASE_PATH "${CMAKE_SOURCE_DIR}/sql/ManageSys.db") #
+message(STATUS "DATABASE_PATH: ${DATABASE_PATH}") # 调试输出
+
 # 添加可执行文件
 qt_add_executable(${PROJECT_NAME}
     main.cpp
@@ -25,6 +28,16 @@ qt_add_executable(${PROJECT_NAME}
     MainWindow.qrc
     DataBaseManSys.cpp
     DataBaseManSys.h
+    stuInfoWidget.cpp
+    stuInfoWidget.ui
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE DATABASE_PATH="${DATABASE_PATH}")
+
+# 添加包含路径（如果 stuInfoWidget.h 不在项目根目录中，请修改路径）
+target_include_directories(${PROJECT_NAME}
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}
 )
 
 # 链接 Qt 库
@@ -34,6 +47,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt6::Gui
         Qt6::Widgets
         Qt6::Sql
+        Qt6::Concurrent
 )
 
 # 设置源文件属性 (如果需要在 IDE 中更好地组织文件)
