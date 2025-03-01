@@ -27,4 +27,6 @@ signals:
 private slots:
 	//void onPhotoScaled(int row, QByteArray photoData, QPixmap scaledPhoto);
 	void on_btnAdd_clicked();
+	void on_btnDelLine_clicked();
+	void on_btnDelItem_clicked();
 };

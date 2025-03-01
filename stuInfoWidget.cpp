@@ -10,13 +10,14 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QSqlError>
 
 stuInfoWidget::stuInfoWidget(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
+	ui.tableWidget->verticalHeader()->setDefaultSectionSize(100);
 	refreshTable();
-
 }
 
 stuInfoWidget::~stuInfoWidget()
@@ -33,7 +34,7 @@ void stuInfoWidget::refreshTable()
 		int row = ui.tableWidget->rowCount();
 		ui.tableWidget->insertRow(row);
 
-		for (int col = 0; col < ui.tableWidget->colorCount(); ++col) {
+		for (int col = 0; col < ui.tableWidget->columnCount(); ++col) {
 			QTableWidgetItem* item = new QTableWidgetItem();
 			item->setTextAlignment(Qt::AlignCenter);
 
@@ -86,13 +87,13 @@ QGroupBox* stuInfoWidget::createFormGroup()
 	enrollmentDateEdit->setCalendarPopup(true);
 
 	QLabel* learningGoalLabel = new QLabel("学习目标:");
-	QComboBox* learningGoalLineEdit = new QComboBox;
+	QLineEdit* learningGoalLineEdit = new QLineEdit;
 	learningGoalLineEdit->setObjectName("learningGoalLineEdit");
-	learningGoalLineEdit->addItems({ "20%","30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%" });
 
 	QLabel* currentProgressLabel = new QLabel("当前进度:");
-	QLineEdit* currentProgressLineEdit = new QLineEdit;
-	currentProgressLineEdit->setObjectName("currentProgressLineEdit");
+	QComboBox* currentProgressComboBox = new QComboBox;
+	currentProgressComboBox->setObjectName("currentProgressComboBox");
+	currentProgressComboBox->addItems({ "20%","30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%" });
 
 	// 基本信息布局
 	formLayout->addRow(idLabel, idLineEdit);
@@ -101,7 +102,7 @@ QGroupBox* stuInfoWidget::createFormGroup()
 	formLayout->addRow(birthDateLabel, birthDateEdit);
 	formLayout->addRow(enrollmentDateLabel, enrollmentDateEdit);
 	formLayout->addRow(learningGoalLabel, learningGoalLineEdit);
-	formLayout->addRow(currentProgressLabel, currentProgressLineEdit);
+	formLayout->addRow(currentProgressLabel, currentProgressComboBox);
 
 	return formGroup;
 }
@@ -119,7 +120,7 @@ QGroupBox* stuInfoWidget::createPhotoGroup()
 	QPushButton* uploadButton = new QPushButton("上传照片");
 	connect(uploadButton, &QPushButton::clicked, this, [this, photoLabel]() {
 		qDebug() << "调用 QFileDialog::getOpenFileName() 前";
-		QString fileName = QFileDialog::getOpenFileName(this, "打开照片", QDir::currentPath(), "Images (*.png *.jpg *.ico *.jpeg);;all files (*.*)");
+		QString fileName = QFileDialog::getOpenFileName(this, "打开照片", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) , "Images (*.png *.jpg *.ico *.jpeg);;all files (*.*)");
 		qDebug() << "调用 QFileDialog::getOpenFileName() 后，文件名：" << fileName;
 		if (!fileName.isEmpty()) {
 			QPixmap pixmap(fileName);
@@ -145,7 +146,87 @@ QGroupBox* stuInfoWidget::createPhotoGroup()
 
 void stuInfoWidget::handleDialogAccepted(QGroupBox* formGroup, QGroupBox* photoGroup)
 {
+	// 1. 获取表单数据
+	QLineEdit* idLineEdit = formGroup->findChild<QLineEdit*>("idLineEdit");
+	QLineEdit* nameLineEdit = formGroup->findChild<QLineEdit*>("nameLineEdit");
+	QComboBox* genderComboBox = formGroup->findChild<QComboBox*>("genderComboBox");
+	QDateEdit* birthDateEdit = formGroup->findChild<QDateEdit*>("birthDateEdit");
+	QDateEdit* enrollmentDateEdit = formGroup->findChild<QDateEdit*>("enrollmentDateEdit");
+	QLineEdit* learningGoalLineEdit = formGroup->findChild<QLineEdit*>("learningGoalLineEdit");
+	QComboBox* currentProgressComboBox = formGroup->findChild<QComboBox*>("currentProgressComboBox");
 
+	// 2. 判空校验，学号和姓名不能为空
+	if (idLineEdit->text().isEmpty() || nameLineEdit->text().isEmpty())
+	{
+		QMessageBox::warning(this, "警告", "学号和姓名不能为空！");
+		return; // 停止执行后续操作
+	}
+	qDebug() << idLineEdit->text();
+	qDebug() << nameLineEdit->text();
+	//// 3. 数据类型校验（例如：当前进度必须是数字）
+	//bool ok;
+	//int learningGoal = learningGoalLineEdit->text().toInt(&ok);
+	//if (!ok)
+	//{
+	//	QMessageBox::warning(this, "警告", "当前进度必须是数字！");
+	//	return; // 停止执行后续操作
+	//}
+
+	// 4. 获取表单的各个值
+	QString id = idLineEdit->text();
+	QString name = nameLineEdit->text();
+	QString gender = genderComboBox->currentText();
+	QDate birthDate = birthDateEdit->date();
+	QDate enrollmentDate = enrollmentDateEdit->date();
+	QString learningGoal = learningGoalLineEdit->text();
+	QString currentProgress = currentProgressComboBox->currentText();
+
+	qDebug() << id;
+	qDebug() << name;
+	qDebug() << gender;
+	qDebug() << birthDate;
+	qDebug() << enrollmentDate;
+	qDebug() << learningGoal;
+	qDebug() << currentProgress;
+
+	// 5. 检查学号唯一性
+	QSqlQuery query;
+	query.prepare("SELECT id FROM studentInfo WHERE id = ?");
+	query.addBindValue(id);
+	if (query.exec()&&query.next())//查询必须成功执行 ( query.exec() 返回 true )结果集中至少要有一行数据 ( query.next() 返回 true )
+	{
+		QMessageBox::critical(this, "错误", tr("学号%1已存在！").arg(id));
+		return; // 停止执行后续操作
+	}
+
+	//6.插入数据
+	QSqlDatabase::database().transaction();//用于开始一个数据库事务。
+	//调用 QSqlDatabase::database().transaction(); 会告诉数据库： "从现在开始，直到我显式地提交 ( commit() ) 或回滚 ( rollback() )，所有数据库操作都属于同一个事务。"
+	QSqlQuery insertquery;
+	insertquery.prepare(
+		"INSERT INTO studentInfo"
+		"(id, name, gender, birthday, join_date, study_goal, progress, photo)"
+		"VALUES(:id, :name, :gender, :birthday, :join_date, :study_goal, :progress, :photo)"
+	);
+	//绑定参数
+	insertquery.bindValue(":id", id);
+	insertquery.bindValue(":name", name);
+	insertquery.bindValue(":gender", gender);
+	insertquery.bindValue(":birthday", birthDate);
+	insertquery.bindValue(":join_date", enrollmentDate);
+	insertquery.bindValue(":study_goal", learningGoal);
+	insertquery.bindValue(":progress", currentProgress);
+	insertquery.bindValue(":photo", photoData); //保存照片数据
+	
+	if (!insertquery.exec()) {
+		QSqlDatabase::database().rollback();//回滚
+		QMessageBox::critical(this, "错误", "数据插入失败：" + insertquery.lastError().text());
+	}
+	else {
+		QSqlDatabase::database().commit();//提交
+		refreshTable();
+		QMessageBox::information(this, "成功", "学生信息已成功保存！");
+	}
 }
 
 void stuInfoWidget::on_btnAdd_clicked()
@@ -181,6 +262,58 @@ void stuInfoWidget::on_btnAdd_clicked()
 	//执行对话框
 	if (dlg.exec() == QDialog::Accepted)
 		handleDialogAccepted(formGroup, photoGroup);
+}
+
+void stuInfoWidget::on_btnDelLine_clicked()
+{
+	auto selected = ui.tableWidget->selectionModel()->selectedRows();
+	if (selected.isEmpty()) {
+		QMessageBox::warning(this, "警告", "没有选择行");
+		return;
+	}
+	QSqlDatabase::database().transaction();
+	for (const auto& index : selected) {
+		QString id = ui.tableWidget->item(index.row(), 0)->text();
+		QSqlQuery query;
+		query.prepare("DELETE FROM studentInfo WHERE id=:id");
+		query.bindValue(":id", id);
+		if (!query.exec()) {
+			QSqlDatabase::database().rollback();
+			QMessageBox::critical(this, "错误", "删除失败：" + query.lastError().text());
+			return;
+		}
+	}
+	QSqlDatabase::database().commit();
+	refreshTable();
+}
+
+void stuInfoWidget::on_btnDelItem_clicked()
+{
+	auto selected = ui.tableWidget->selectedItems();
+	if (selected.isEmpty()) {
+		QMessageBox::warning(this, "警告", "没有选择单元格！");
+		return;
+	}
+	QSqlDatabase::database().transaction();
+	for (auto item : selected) {
+		int row = item->row();
+		int col = item->column();
+		QString id = ui.tableWidget->item(row, 0)->text();
+
+		const QStringList columns = { "id", "name", "gender", "birthday", "join_date", "study_goal", "progress", "photo" };
+
+		QSqlQuery query;
+		query.prepare(QString("UPDATE studentInfo SET %1 =:%2 WHERE id=:id").arg(columns[col]).arg(columns[col]));
+		query.bindValue(columns[col], "");
+		query.bindValue(":id", id);
+		if (!query.exec()) {
+			QSqlDatabase::database().rollback();
+			QMessageBox::critical(this, "错误", "删除失败：" + query.lastError().text());
+			return;
+		}
+	}
+	QSqlDatabase::database().commit();
+	refreshTable();
 }
 
 //#include "stuInfoWidget.h"
