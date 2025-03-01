@@ -11,6 +11,8 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSqlError>
+#include <exception>
+#include "Delegate.h"
 
 stuInfoWidget::stuInfoWidget(QWidget *parent)
 	: QWidget(parent)
@@ -18,6 +20,27 @@ stuInfoWidget::stuInfoWidget(QWidget *parent)
 	ui.setupUi(this);
 	ui.tableWidget->verticalHeader()->setDefaultSectionSize(100);
 	refreshTable();
+
+	//性别列处理
+	ComboBoxDelegate* genderDelegate = new ComboBoxDelegate(QStringList({ "男","女" }), this);
+	ui.tableWidget->setItemDelegateForColumn(stuInfoHeader::GENDER, genderDelegate);
+
+	//学习目标列处理
+	ComboBoxDelegate* progressDelegate = new ComboBoxDelegate(QStringList({ "0%","20%","30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%" }), this);
+	ui.tableWidget->setItemDelegateForColumn(stuInfoHeader::PROGRESS, progressDelegate);
+
+	//日期列处理
+	DateEditDelegate* joinDate = new DateEditDelegate(this);
+	ui.tableWidget->setItemDelegateForColumn(stuInfoHeader::JOIN_DATE, joinDate);
+
+	DateEditDelegate* birthday = new DateEditDelegate(this);
+	ui.tableWidget->setItemDelegateForColumn(stuInfoHeader::BIRTHDAY, birthday);
+
+	//图片列处理
+	ImgDelegate* imagData = new ImgDelegate(this);
+	ui.tableWidget->setItemDelegateForColumn(stuInfoHeader::PHOTO, imagData);
+
+	connect(ui.tableWidget, &QTableWidget::itemChanged, this, &stuInfoWidget::handleitemChanged);
 }
 
 stuInfoWidget::~stuInfoWidget()
@@ -47,12 +70,14 @@ void stuInfoWidget::refreshTable()
 					item->setData(Qt::UserRole, photoData);
 				}
 			}
-			else
-				item->setText(query.value(col).toString());//处理其他列
+			else {//处理其他列
+				item->setText(query.value(col).toString());
+				//item->setTextAlignment(Qt::AlignCenter);
+			}
 			ui.tableWidget->setItem(row, col, item);
 		}
-		ui.tableWidget->blockSignals(false);
 	}
+	ui.tableWidget->blockSignals(false);
 }
 
 QGroupBox* stuInfoWidget::createFormGroup()
@@ -93,7 +118,7 @@ QGroupBox* stuInfoWidget::createFormGroup()
 	QLabel* currentProgressLabel = new QLabel("当前进度:");
 	QComboBox* currentProgressComboBox = new QComboBox;
 	currentProgressComboBox->setObjectName("currentProgressComboBox");
-	currentProgressComboBox->addItems({ "20%","30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%" });
+	currentProgressComboBox->addItems({ "0%","20%","30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"});
 
 	// 基本信息布局
 	formLayout->addRow(idLabel, idLineEdit);
@@ -314,6 +339,47 @@ void stuInfoWidget::on_btnDelItem_clicked()
 	}
 	QSqlDatabase::database().commit();
 	refreshTable();
+}
+
+void stuInfoWidget::handleitemChanged(QTableWidgetItem* item)
+{
+	const int row = item->row();
+	const int col = item->column();
+
+	if (col == stuInfoHeader::ID) {
+		QMessageBox::warning(this, "警告", "不能修改ID");
+		refreshTable();
+		return;
+	}
+
+	const QString originalId = ui.tableWidget->item(row, 0)->text();//原始学号
+	const QString columnName = QStringList{ "id", "name", "gender", "birthday", "join_date", "study_goal", "progress", "photo" } [col] ;
+
+	//事务开始
+	QSqlDatabase::database().transaction();
+	try
+	{
+		QSqlQuery query;
+		query.prepare(QString("UPDATE studentInfo SET %1 =:%2 WHERE id=:id").arg(columnName).arg(columnName));
+		if (col == stuInfoHeader::PHOTO) {
+			query.bindValue(":" + columnName, item->data(Qt::UserRole).toByteArray());
+		}
+		else
+			query.bindValue(":" + columnName, item->text().trimmed());
+		qDebug() << item->text().trimmed();
+		query.bindValue(":id", originalId);
+
+		if (!query.exec()) {
+			throw std::runtime_error("更新失败！" + query.lastError().text().toStdString());
+		}
+		QSqlDatabase::database().commit();
+	}
+	catch (const std::exception& e)
+	{
+		QSqlDatabase::database().rollback();
+		refreshTable();
+		QMessageBox::critical(this, "错误", "操作失败：" + QString::fromUtf8(e.what()));
+	}
 }
 
 //#include "stuInfoWidget.h"

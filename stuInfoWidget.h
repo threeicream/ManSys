@@ -13,6 +13,10 @@ public:
 	stuInfoWidget(QWidget *parent = nullptr);
 	~stuInfoWidget();
 private:
+	enum stuInfoHeader {
+		ID,NAME,GENDER,BIRTHDAY,JOIN_DATE,STUDY_GOAL,PROGRESS,PHOTO
+	};
+private:
 	void refreshTable();
 	QGroupBox* createFormGroup();
 	QGroupBox* createPhotoGroup();
@@ -29,4 +33,5 @@ private slots:
 	void on_btnAdd_clicked();
 	void on_btnDelLine_clicked();
 	void on_btnDelItem_clicked();
+	void handleitemChanged(QTableWidgetItem* item);
 };
