@@ -19,6 +19,7 @@ stuInfoWidget::stuInfoWidget(QWidget *parent)
 {
 	ui.setupUi(this);
 	ui.tableWidget->verticalHeader()->setDefaultSectionSize(100);
+	//ui.tableWidget->setAlternatingRowColors(true);
 	refreshTable();
 
 	//性别列处理
@@ -357,7 +358,7 @@ void stuInfoWidget::handleitemChanged(QTableWidgetItem* item)
 
 	//事务开始
 	QSqlDatabase::database().transaction();
-	try
+	try//这是确定如果能保存就保存，有一个错误就直接全部失败，不能保存部分内容
 	{
 		QSqlQuery query;
 		query.prepare(QString("UPDATE studentInfo SET %1 =:%2 WHERE id=:id").arg(columnName).arg(columnName));

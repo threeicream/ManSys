@@ -215,21 +215,7 @@
        <number>0</number>
       </property>
       <widget class="stuInfoWidget" name="pageStudentInfo"/>
-      <widget class="QWidget" name="pageSchedule">
-       <widget class="QPushButton" name="pushButton_2">
-        <property name="geometry">
-         <rect>
-          <x>470</x>
-          <y>200</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>2</string>
-        </property>
-       </widget>
-      </widget>
+      <widget class="ScheduleWidget" name="pageSchedule"/>
       <widget class="QWidget" name="pageFinance">
        <widget class="QPushButton" name="pushButton_3">
         <property name="geometry">
@@ -286,6 +272,12 @@
    <class>stuInfoWidget</class>
    <extends>QWidget</extends>
    <header location="global">stuinfowidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ScheduleWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">schedulewidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

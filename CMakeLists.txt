@@ -31,6 +31,7 @@ qt_add_executable(${PROJECT_NAME}
     stuInfoWidget.cpp
     stuInfoWidget.ui
     Delegate.h
+    ScheduleWidget.cpp
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE DATABASE_PATH="${DATABASE_PATH}")
