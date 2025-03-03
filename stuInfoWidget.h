@@ -12,7 +12,7 @@ class stuInfoWidget : public QWidget
 public:
 	stuInfoWidget(QWidget *parent = nullptr);
 	~stuInfoWidget();
-private:
+public:
 	enum stuInfoHeader {
 		ID,NAME,GENDER,BIRTHDAY,JOIN_DATE,STUDY_GOAL,PROGRESS,PHOTO
 	};

@@ -9,6 +9,7 @@ class QTableWidget;
 class QComboBox;
 class QLabel;
 class QPushButton;
+class QTableWidgetItem;
 
 class ScheduleWidget : public QWidget
 {
@@ -34,11 +35,12 @@ private:
 	QPushButton* nextWeekBtn; // 跳转到下一周
 	QMap<QPair<int, int>, QVector<QVector<QString>>> scheduleData; // 课程数据存储结构： 键为 (year, week)， 值为课程表数据
 	QStringList times; // 上午1， 上午2...
+	QStringList SchSqlName;
 private slots:
 	void loadSchedule();
-	/*void addCourse();
+	void addCourse();
 	void deleteCourse();
 	void showPreviousWeek();
 	void showNextWeek();
-	void handleItemChanged();*/
+	void handleItemChanged(QTableWidgetItem* item);
 };

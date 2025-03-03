@@ -15,6 +15,11 @@
 #include <QMessageBox>
 #include <QOverload>
 #include <QSqlQuery>
+#include <QFormLayout>
+#include "stuInfoWidget.h"
+#include <QTimeEdit>
+#include <QSqlTableModel>
+#include <QSqlError>
 
 ScheduleWidget::ScheduleWidget(QWidget *parent)
 	: QWidget(parent)
@@ -41,11 +46,11 @@ ScheduleWidget::ScheduleWidget(QWidget *parent)
 	loadSchedule();
 	connect(yearComboBox, QOverload<int>::of(&QComboBox:: currentIndexChanged), this, &ScheduleWidget:: loadSchedule);//显示使用int版本的信号
 	connect(weekComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ScheduleWidget::loadSchedule);//显示使用int版本的信号
-	//connect(addButton, &QPushButton:: clicked, this, &ScheduleWidget:: addCourse);
-	//connect(deleteButton, &QPushButton:: clicked, this, &ScheduleWidget::deleteCourse);
-	//connect(prevWeekBtn, &QPushButton:: clicked, this, &ScheduleWidget:: showPreviousWeek);
-	//connect(nextWeekBtn, &QPushButton:: clicked, this, &ScheduleWidget:: showNextWeek);
-	//connect(tableWidget, &QTableWidget:: itemChanged,this, &ScheduleWidget:: handleItemChanged);
+	connect(addButton, &QPushButton:: clicked, this, &ScheduleWidget:: addCourse);
+	connect(deleteButton, &QPushButton:: clicked, this, &ScheduleWidget::deleteCourse);
+	connect(prevWeekBtn, &QPushButton:: clicked, this, &ScheduleWidget:: showPreviousWeek);
+	connect(nextWeekBtn, &QPushButton:: clicked, this, &ScheduleWidget:: showNextWeek);
+	connect(tableWidget, &QTableWidget:: itemChanged,this, &ScheduleWidget:: handleItemChanged);
 }
 
 ScheduleWidget::~ScheduleWidget()
@@ -183,5 +188,214 @@ void ScheduleWidget::loadSchedule()
 		}
 	}
 	tableWidget->blockSignals(false);
+}
+
+void ScheduleWidget::addCourse()
+{
+	int dayindex = tableWidget->currentColumn();
+	int timeindex = tableWidget->currentRow();
+	if (dayindex == -1 || timeindex == -1) {
+		QMessageBox::warning(this, "错误", "请正确选择时间！");
+		return;
+	}
+
+	if (!tableWidget->item(timeindex, dayindex)->text().isEmpty()) {
+		QMessageBox::warning(this, "错误", "已占用！");
+		return;
+	}
+
+	QDialog dialog(this);
+	dialog.setWindowTitle("添加课程");
+	dialog.setMinimumSize(172,134);
+	QFormLayout layout(&dialog);
+	QComboBox namecombo;
+	QComboBox object;
+	object.addItems(QStringList{ "语文","数学","英语","物理","化学" });
+	QSqlQuery namequery("SELECT name FROM studentInfo");
+	while (namequery.next()) {
+		namecombo.addItem(namequery.value(0).toString());
+	}
+	QMap<int, QTime>timePresets = {
+		{0,QTime(9,0)},{1,QTime(11,0)},{2,QTime(14,0)},
+		{3,QTime(16,0)},{4,QTime(19,0)},{5,QTime(21,0)}
+	};
+	QTimeEdit timeEdit;//时间选择控件
+	timeEdit.setDisplayFormat("HH:mm");
+	timeEdit.setTime(timePresets[timeindex]);
+	timeEdit.setTimeRange(timePresets[timeindex], timePresets[timeindex].addSecs(3600));
+
+	layout.addRow("学生姓名：", &namecombo);
+	layout.addRow("学科：", &object);
+	layout.addRow("课程时间：", &timeEdit);
+	QDialogButtonBox buttons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	buttons.button(QDialogButtonBox::Ok)->setText("确认");
+	buttons.button(QDialogButtonBox::Cancel)->setText("取消");
+	layout.addRow(&buttons);
+	connect(&buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+	connect(&buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+	if (dialog.exec() != QDialog::Accepted)return;
+	//生成组合字符串
+	QString coursename = QString("%1：%2 %3").arg(namecombo.currentText()).arg(object.currentText()).arg(timeEdit.time().toString("HH:mm"));
+
+	//获取日期信息
+	int year = yearComboBox->currentData().toInt();
+	int week = weekComboBox->currentData().toInt();
+	QPair<QDate, QDate>weekRange = getWeekRange(year, week);
+	QDate currentDate = weekRange.first.addDays(dayindex);
+	QString timeslot = times[timeindex];
+
+	//数据库保存
+	/*QSqlTableModel model;
+	model.setTable("schedule");
+	qDebug() << model.headerData(0, Qt::Horizontal).toString();*/
+	QSqlDatabase::database().transaction();
+	QSqlQuery addtquery;
+	addtquery.prepare(
+		"INSERT INTO schedule"
+		"(date,time,course_name)"
+		"VALUES(:date, :time, :course_name)"
+	);
+	addtquery.bindValue(":date", currentDate.toString("yyyy-MM-dd"));
+	addtquery.bindValue(":time", timeslot);
+	addtquery.bindValue(":course_name", coursename);
+
+	if (!addtquery.exec()) {
+		QSqlDatabase::database().rollback();//回滚
+		QMessageBox::critical(this, "错误", "数据插入失败：" + addtquery.lastError().text());
+	}
+	else {
+		QSqlDatabase::database().commit();//提交
+		loadSchedule();
+		QMessageBox::information(this, "成功", "课程已成功保存！");
+	}
+}
+
+void ScheduleWidget::deleteCourse()
+{
+	QMessageBox confirmBox(this);
+	confirmBox.setWindowTitle("删除");
+	confirmBox.setText("确认删除记录？");
+
+	QPushButton* btnyes = confirmBox.addButton("确定", QMessageBox::YesRole);
+	QPushButton* btncancel = confirmBox.addButton("取消", QMessageBox::NoRole);
+
+	confirmBox.setDefaultButton(btncancel);
+
+	confirmBox.exec();
+
+	if (confirmBox.clickedButton() != btnyes) {
+		confirmBox.close();
+		return;
+	}
+	
+	int dayindex = tableWidget->currentColumn();
+	int timeindex = tableWidget->currentRow();
+	if (dayindex == -1 || timeindex == -1) {
+		QMessageBox::warning(this, "错误", "请正确选择时间！");
+		return;
+	}
+
+	QTableWidgetItem* item = tableWidget->item(timeindex, dayindex);
+	if (item->text().isEmpty()) {
+		QMessageBox::warning(this, "错误", "为空！");
+		return;
+	}
+
+	//获取日期信息
+	int year = yearComboBox->currentData().toInt();
+	int week = weekComboBox->currentData().toInt();
+	QPair<QDate, QDate>weekRange = getWeekRange(year, week);
+	QDate date = weekRange.first.addDays(dayindex);
+	QString time = times[timeindex];
+
+	QSqlDatabase::database().transaction();
+	QSqlQuery query;
+	query.prepare("DELETE FROM schedule WHERE date =:date AND time=:time");
+	query.bindValue(":date", date.toString("yyyy-MM-dd"));
+	query.bindValue(":time", time);
+
+	if (!query.exec()) {
+		QSqlDatabase::database().rollback();//回滚
+		QMessageBox::critical(this, "错误", "数据删除失败：" + query.lastError().text());
+	}
+	else {
+		QSqlDatabase::database().commit();//提交
+		QMessageBox::information(this, "成功", "删除成功！");
+		loadSchedule();
+	}
+}
+
+void ScheduleWidget::showPreviousWeek()
+{
+	int currentWeek = weekComboBox->currentIndex();
+	int currentYear = yearComboBox->currentIndex();
+	if (currentWeek > 0) {
+		weekComboBox->setCurrentIndex(currentWeek - 1);
+	}
+	else {
+		if (yearComboBox->currentIndex() > 0) {
+			yearComboBox->setCurrentIndex(currentYear - 1);
+			//跳转到上一年最后一周（第52周） 
+			weekComboBox->setCurrentIndex(51);
+		}
+	}
+}
+
+void ScheduleWidget::showNextWeek()
+{
+	int currentWeek = weekComboBox->currentIndex();
+	int currentYear = yearComboBox-> currentIndex(); 
+	if (currentWeek < 51){
+		weekComboBox-> setCurrentIndex(currentWeek + 1);
+	}
+	else {
+		if (yearComboBox->currentIndex() > yearComboBox->count() - 1) {
+			yearComboBox->setCurrentIndex(currentYear + 1);
+			weekComboBox->setCurrentIndex(0);
+		}
+	}
+}
+
+void ScheduleWidget::handleItemChanged(QTableWidgetItem* item)
+{
+	const int timeslot = item->row();
+	const int day = item->column();
+	QString newcourse = item->text().trimmed();
+
+	//获取日期信息
+	int year = yearComboBox->currentData().toInt();
+	int week = weekComboBox->currentData().toInt();
+	QPair<QDate, QDate>weekRange = getWeekRange(year, week);
+	QDate date = weekRange.first.addDays(day);
+	QString time = times[timeslot];
+
+	QSqlDatabase::database().transaction();
+	QSqlQuery query;
+	if(newcourse.isEmpty()){//删除
+		query.prepare("DELETE FROM schedule WHERE date =:date AND time=:time");
+		query.bindValue(":date", date.toString("yyyy-MM-dd"));
+		query.bindValue(":time", time);
+	}
+	else {
+		query.prepare(
+			"INSERT OR REPLACE INTO schedule"
+			"(date,time,course_name)"
+			"VALUES (:date,:time,:course_name)"
+		);
+		query.bindValue(":date", date.toString("yyyy-MM-dd"));
+		query.bindValue(":time", time);
+		query.bindValue(":course_name", newcourse);
+		qDebug() << date.toString("yyyy-MM-dd") << time << newcourse;
+	}
+
+	if (!query.exec()) {
+		QSqlDatabase::database().rollback();//回滚
+		QMessageBox::critical(this, "错误", "数据修改失败：" + query.lastError().text());
+		loadSchedule();
+	}
+	else {
+		QSqlDatabase::database().commit();//提交
+		QMessageBox::information(this, "成功", "修改成功！");
+	}
 }
 
