@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 找到 Qt 模块
-find_package(Qt6 COMPONENTS Core Gui Widgets Sql Concurrent REQUIRED)
+find_package(Qt6 COMPONENTS Core Gui Widgets Sql Concurrent Charts REQUIRED)
 
 # Qt 设置 (在 find_package 之后立即调用)
 qt_standard_project_setup()
@@ -32,6 +32,8 @@ qt_add_executable(${PROJECT_NAME}
     stuInfoWidget.ui
     Delegate.h
     ScheduleWidget.cpp
+    FinancialWidget.cpp
+    FinancialWidget.ui
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE DATABASE_PATH="${DATABASE_PATH}")
@@ -50,6 +52,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt6::Widgets
         Qt6::Sql
         Qt6::Concurrent
+        Qt6::Charts
 )
 
 # 设置源文件属性 (如果需要在 IDE 中更好地组织文件)

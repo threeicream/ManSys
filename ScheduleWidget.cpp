@@ -110,6 +110,7 @@ void ScheduleWidget::setupTable()
 	QStringList headerLabels = { "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日" };
 	QStringList rowLabels = { "上午1", "上午2", "下午1", "下午2", "晚上1", "晚上2" };
 	times = rowLabels;
+	weeks = headerLabels;
 	tableWidget->setRowCount(rowLabels.size());   // 星期一到星期日
 	tableWidget->setColumnCount(headerLabels.size()); // 时间段数量
 	
@@ -120,7 +121,7 @@ void ScheduleWidget::setupTable()
 	QStringList ColLabels;
 	for (int i = 0; i < 7; ++i) {
 		QDate currentDate = startDate.addDays(i);
-		ColLabels.append(QString("%1\n%2").arg(headerLabels[i]).arg(currentDate.toString("MM/dd")));
+		ColLabels.append(QString("%1\n%2").arg(weeks[i]).arg(currentDate.toString("MM/dd")));
 	}
 	tableWidget->setHorizontalHeaderLabels(ColLabels);
 	tableWidget->setVerticalHeaderLabels(rowLabels);
@@ -161,6 +162,13 @@ void ScheduleWidget::loadSchedule()
 	QDate startDate = weekRange.first;
 	QDate endDate = weekRange.second;
 	dateRangeLabel->setText(QString("%1到%2").arg(startDate.toString("yyyy-MM-dd")).arg(endDate.toString("yyyy-MM-dd")));
+
+	QStringList ColLabels;
+	for (int i = 0; i < 7; ++i) {
+		QDate currentDate = startDate.addDays(i);
+		ColLabels.append(QString("%1\n%2").arg(weeks[i]).arg(currentDate.toString("MM/dd")));
+	}
+	tableWidget->setHorizontalHeaderLabels(ColLabels);
 
 	QVector<QVector<QString>> courses(times.count(), QVector<QString>(7, ""));
 
