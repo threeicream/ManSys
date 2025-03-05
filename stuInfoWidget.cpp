@@ -67,7 +67,7 @@ void stuInfoWidget::refreshTable()
 				if (!photoData.isEmpty()) {
 					QPixmap photo;
 					photo.loadFromData(photoData);
-					item->setData(Qt::DecorationRole, photo.scaled(100, 100, Qt::KeepAspectRatio));//Qt::DecorationRole 用于指定要显示的装饰
+					//item->setData(Qt::DecorationRole, photo.scaled(100, 100, Qt::KeepAspectRatio));//Qt::DecorationRole 用于指定要显示的装饰
 					item->setData(Qt::UserRole, photoData);
 				}
 			}

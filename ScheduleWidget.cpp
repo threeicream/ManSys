@@ -94,7 +94,7 @@ void ScheduleWidget::setupTable()
 {
 	// 初始化年份下拉菜单
 	auto Year = QDate::currentDate().year();
-	yearComboBox->addItem(QString::number(Year - 1), Year - 1);
+	yearComboBox->addItem(QString::number(Year - 1), Year - 1);//Year - 1这个数据被存储在默认的 Qt::UserRole 角色中。
 	yearComboBox->addItem(QString::number(Year), Year);
 	yearComboBox->addItem(QString::number(Year + 1), Year + 1);
 

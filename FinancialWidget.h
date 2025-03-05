@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include "ui_FinancialWidget.h"
+#include <QStringList>
 class QChartView;
 class QTableWidget;
 class QComboBox;
@@ -21,9 +22,14 @@ private:
 	void addRecord();
 	void delRecord();
 	void editRecord();
+	void loadFinancialRecords();
+	void updateChart();
+	void updatePieChart();
+	void populateStudentComboBox();
 private:
 	Ui::FinancialWidget ui;
 private:
+	enum FinAncialEnum { ID, STUDENTID, PAYMENTDATE, AMOUNT, PAYMENTTYPE, NOTES };
 	QChartView* pieChartView;
 	QTableWidget* tableWidget;
 	QComboBox* studentComboBox;
@@ -33,4 +39,5 @@ private:
 	QChartView* chartView;
 	QDateEdit* startDateEdit;
 	QDateEdit* endDateEdit;
+	QStringList fieldNames;
 };
