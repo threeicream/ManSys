@@ -33,7 +33,7 @@ qt_add_executable(${PROJECT_NAME}
     Delegate.h
     ScheduleWidget.cpp
     FinancialWidget.cpp
-    FinancialWidget.ui
+     HonorWallWidget.cpp
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE DATABASE_PATH="${DATABASE_PATH}")

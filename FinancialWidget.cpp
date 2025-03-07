@@ -6,6 +6,9 @@
 #include <QDateEdit>
 #include <QLineEdit>
 #include <QPieSeries>
+#include <QLineSeries>
+#include <QDateTimeAxis>
+#include <QValueAxis>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -19,6 +22,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QTimer>
+#include <QGraphicsLayout>
 
 FinancialWidget::FinancialWidget(QWidget *parent)
 	: QWidget(parent)
@@ -40,7 +44,7 @@ void FinancialWidget::setupUI()
 	QVBoxLayout* mainLayout = new QVBoxLayout(this);
 	QHBoxLayout* topLayout = new QHBoxLayout();
 	QHBoxLayout* middleLayout = new QHBoxLayout();
-	chartView = new QChartView();
+	chartView = new QChartView(this);
 	mainLayout->addLayout(topLayout);
 	mainLayout->addLayout(middleLayout, 60); //占60%高度 
 	mainLayout->addWidget(chartView, 40); //占40%高度顶部筛选条件与按钮布局  
@@ -79,7 +83,7 @@ void FinancialWidget::setupUI()
 
 	pieChartView = new QChartView(this);
 	middleLayout->addWidget(pieChartView);
-	chartView->setRenderHint(QPainter::Antialiasing);//启用 chartView 中的抗锯齿渲染
+	pieChartView->setRenderHint(QPainter::Antialiasing);//启用 chartView 中的抗锯齿渲染
 	chartView->setMinimumHeight(200);//最小高度保障
 
 	//连接
@@ -89,6 +93,7 @@ void FinancialWidget::setupUI()
 	connect(studentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &FinancialWidget::loadFinancialRecords);
 	connect(startDateEdit, &QDateEdit::dateChanged, this, &FinancialWidget::loadFinancialRecords);
 	connect(endDateEdit, &QDateEdit::dateChanged, this, &FinancialWidget::loadFinancialRecords);
+	connect(tableWidget, &QTableWidget::itemDoubleClicked, this, &FinancialWidget::editRecord);
 }
 
 void FinancialWidget::setupTable()
@@ -234,6 +239,79 @@ void FinancialWidget::delRecord()
 
 void FinancialWidget::editRecord()
 {
+	int currentRow = tableWidget->currentRow();
+	if (currentRow < 0) {
+		QMessageBox::warning(this, "警告", "请选择行");
+		return;
+	}
+	QString id = tableWidget->item(currentRow, FinAncialEnum::ID)->text();
+	QString studentName = tableWidget->item(currentRow, FinAncialEnum::STUDENTID)->text();
+	QString paymentDate = tableWidget->item(currentRow, FinAncialEnum::PAYMENTDATE)->text();
+	QString amount = tableWidget->item(currentRow, FinAncialEnum::AMOUNT)->text();
+	QString feetype = tableWidget->item(currentRow, FinAncialEnum::PAYMENTTYPE)->text();
+	QString remark = tableWidget->item(currentRow, FinAncialEnum::NOTES)->text();
+	
+	QDialog dialog(this);
+	dialog.setWindowTitle("修改缴费记录");
+	dialog.setFixedSize(195, 220);
+	QFormLayout mainlayout(&dialog);
+
+	QComboBox* studentNmaeCombo = new QComboBox(&dialog);
+	QSqlQuery namequery("SELECT id,name FROM studentInfo");
+	while (namequery.next()) {
+		QString id = namequery.value(0).toString();
+		QString name = namequery.value(1).toString();
+		studentNmaeCombo->addItem(name, QVariant(id));
+	}
+	studentNmaeCombo->setCurrentText(studentName);
+	QDateEdit* paymentDateEdit = new QDateEdit(QDate::fromString(paymentDate, "yyyy-MM-dd"), &dialog);
+	paymentDateEdit->setCalendarPopup(true);
+	QLineEdit* amountEdit = new QLineEdit(amount, &dialog);
+	QLineEdit* feetypeEdit = new QLineEdit(feetype, &dialog);
+	QLineEdit* remarkEdit = new QLineEdit(remark, &dialog);
+	QPushButton* btnEnter = new QPushButton("确认", &dialog);
+	QPushButton* btnCancel = new QPushButton("取消", &dialog);
+	
+	mainlayout.addRow("学生名称：", studentNmaeCombo);
+	mainlayout.addRow("缴费日期", paymentDateEdit);
+	mainlayout.addRow("金额", amountEdit);
+	mainlayout.addRow("支付类型", feetypeEdit);
+	mainlayout.addRow("备注", remarkEdit);
+	mainlayout.addRow(btnEnter, btnCancel);
+
+	connect(btnEnter, &QPushButton::clicked, &dialog, &QDialog::accept);
+	connect(btnCancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+	if (dialog.exec() == QDialog::Accepted) {
+		QString studentid = studentNmaeCombo->currentData().toString();
+		paymentDate = paymentDateEdit->date().toString("yyyy-MM-dd");
+		amount = amountEdit->text();
+		feetype = feetypeEdit->text();
+		remark = remarkEdit->text();
+		
+		QSqlDatabase::database().transaction();//用于开始一个数据库事务。
+		QSqlQuery query;
+		query.prepare(
+			"UPDATE financialRecords SET student_id=:student_id,payment_date=:payment_date, "
+			"amount=:amount, payment_type=:payment_type, notes=:notes WHERE id=:id"
+		);
+		query.bindValue(":student_id", studentid); 
+		query.bindValue(":payment_date", paymentDate);
+		query.bindValue(":amount", amount);
+		query.bindValue(":payment_type", feetype);
+		query.bindValue(":notes", remark);
+		query.bindValue(":id", id);
+
+		if (!query.exec()) {
+			QSqlDatabase::database().rollback();//回滚
+			QMessageBox::critical(this, "错误", "数据修改失败：" + query.lastError().text());
+		}
+		else {
+			QSqlDatabase::database().commit();//提交
+			loadFinancialRecords();
+			QMessageBox::information(this, "成功", "学生信息已成功保存！");
+		}
+	}
 }
 
 void FinancialWidget::loadFinancialRecords()
@@ -278,6 +356,91 @@ void FinancialWidget::loadFinancialRecords()
 
 void FinancialWidget::updateChart()
 {
+	QString studentId = studentComboBox->currentData().toString();
+	QDate startDate = startDateEdit->date();
+	QDate endDate = endDateEdit->date();
+	if (startDate > endDate) {
+		std::swap(startDate, endDate);
+		startDateEdit->setDate(endDate);
+		endDateEdit->setDate(startDate);
+	}
+	QSqlQuery query;
+	query.prepare(
+		"SELECT DATE(payment_date) AS day, SUM(amount) As total "
+		"FROM financialRecords "
+		"WHERE payment_date BETWEEN :startDate AND :endDate "
+		"AND (:stuId = '-1' OR student_id = :stuId) "
+		"GROUP BY day ORDER BY day "
+	);
+	query.bindValue(":startDate", startDate.toString("yyyy-MM-dd"));
+	query.bindValue(":endDate", endDate.toString("yyyy-MM-dd"));
+	query.bindValue(":stuId", studentId);
+
+	QMap<QDate, qreal>dayData;
+	qreal maxAmount = 0;
+
+	if (!query.exec()) { // 增加错误处理
+		QMessageBox::critical(this, "SQL 错误", query.lastError().text());
+		return; // 退出函数
+	}
+
+	while (query.next()) {
+		QDate day = QDate::fromString(query.value(0).toString(),"yyyy-MM-dd");
+		qDebug() << query.value(0).toString();
+		qDebug() << query.value(1).toDouble();
+		if (!day.isValid())
+			continue;
+		qreal amount = query.value(1).toDouble();
+		dayData[day] = amount;
+		maxAmount = std::max(maxAmount, amount);
+	}
+
+	QLineSeries* series = new QLineSeries();
+	series->setName("销售额");
+	QPen pen(Qt::blue);
+	pen.setWidth(2);
+	series->setPen(pen);
+	series->setPointLabelsFormat("@yPoint");
+	series->setPointLabelsVisible(true);
+	QDate currentDate = startDate;
+	while (currentDate <= endDate) {
+		qreal value = dayData[currentDate];
+		series->append(currentDate.startOfDay().toMSecsSinceEpoch(), value);
+		currentDate = currentDate.addDays(1);
+	}
+
+	QChart* chart = new QChart();
+	chart->addSeries(series);
+	QDateTimeAxis* axisx = new QDateTimeAxis();
+	axisx->setTitleText("日期");
+	axisx->setFormat("yyyy-MM-dd");
+	axisx->setRange(startDate.startOfDay(),endDate.startOfDay() );//它会保留日期的年月日部分，并将时、分、秒和毫秒设置为零。
+	//chart->addAxis(axisx, Qt::AlignBottom);//添加x轴
+	chart->setAxisX(axisx);
+	series->attachAxis(axisx);
+	// 计算刻度数量
+	int numTicks = QDate(startDate).daysTo(endDate) + 1; // 包括起始日期和结束日期
+	axisx->setTickCount(numTicks); // 设置刻度数量
+
+	QValueAxis* axisy = new QValueAxis();
+	axisy->setTitleText("金额（元）");
+	axisy->setLabelFormat("%.0f");
+	axisy->setTickInterval(10);
+	axisy->setRange(0, std::ceil(maxAmount / 10) * 10 + ceil(maxAmount / 10) * 2);//向上取整
+	chart->setAxisY(axisy);
+	series->attachAxis(axisy);
+
+	if (chartView->chart()) {
+		QChart* oldChart = chartView->chart();
+		oldChart->deleteLater(); // 使用 deleteLater 避免立即删除
+	}
+	else {
+		qDebug() << "警告：oldChart 为空，跳过删除操作。";
+	}
+	chartView->setChart(chart);
+	chart->layout()->invalidate(); // 强制重新布局
+	chartView->setRenderHint(QPainter::Antialiasing);//启用 chartView 中的抗锯齿渲染
+	chart->legend()->setVisible(false);
 }
 
 void FinancialWidget::updatePieChart()
@@ -285,6 +448,11 @@ void FinancialWidget::updatePieChart()
 	QString studentId = studentComboBox->currentData().toString();
 	QDate startDate = startDateEdit->date();
 	QDate endDate = endDateEdit->date();
+	if (startDate > endDate) {
+		std::swap(startDate, endDate);
+		startDateEdit->setDate(endDate);
+		endDateEdit->setDate(startDate);
+	}
 	QSqlQuery query;
 	query.prepare(
 		"SELECT payment_type, SUM(amount) "
@@ -317,10 +485,16 @@ void FinancialWidget::updatePieChart()
 			series->append(slice);
 		}
 	}
+	series->setLabelsVisible(true);
 
+	//chart = std::make_shared<QChart>();
 	QChart* chart = new QChart();
 	chart->addSeries(series);
 	chart->setTitle("支付类型分布");
+	//chart->setObjectName("pieChart_" + studentId); // 基于 studentId 创建唯一的 objectName
+	chart->setAnimationOptions(QChart::AnimationOption::SeriesAnimations);
+	chart->setAcceptHoverEvents(true);//允许接收悬停事件
+	connect(series, &QPieSeries::hovered, this, &FinancialWidget::do_PieHovered);
 
 	//图例设置
 	chart->legend()->setVisible(true);
@@ -344,15 +518,19 @@ void FinancialWidget::updatePieChart()
 	series->setPieSize(0.75);
 	// 移除旧的 chart，并释放内存
 	if (pieChartView->chart()) {
-		QChart* oldChart = pieChartView->chart(); // 移除旧的 QChart 对象
-		delete oldChart; // 释放旧的 QChart 对象
+		QChart* oldChart = pieChartView->chart();
+		oldChart->deleteLater(); // 使用 deleteLater 避免立即删除
+	}
+	else {
+		qDebug() << "警告：oldChart 为空，跳过删除操作。";
 	}
 	//pieChartView->setChart(chart);
-	QTimer::singleShot(0, [this, chart]() {
-		pieChartView->setChart(chart);
-		});
+	//QTimer::singleShot(6000, [&]() {
+	//	pieChartView->setChart(chart);
+	//	});
+	pieChartView->setChart(chart);
 
-	//强制重绘
+	////强制重绘
 	pieChartView->repaint();
 }
 
@@ -367,4 +545,9 @@ void FinancialWidget::populateStudentComboBox()
 		QString name = namequery.value(1).toString();
 		studentComboBox->addItem(name, QVariant(id));
 	}
+}
+
+void FinancialWidget::do_PieHovered(QPieSlice* slice, bool state)
+{
+	slice->setExploded(state);//悬停动画效果
 }

@@ -212,26 +212,12 @@
     <item>
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="stuInfoWidget" name="pageStudentInfo"/>
       <widget class="ScheduleWidget" name="pageSchedule"/>
       <widget class="FinancialWidget" name="pageFinance"/>
-      <widget class="QWidget" name="pageHonor">
-       <widget class="QPushButton" name="pushButton_4">
-        <property name="geometry">
-         <rect>
-          <x>450</x>
-          <y>210</y>
-          <width>75</width>
-          <height>24</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>4</string>
-        </property>
-       </widget>
-      </widget>
+      <widget class="HonorWallWidget" name="pageHonor"/>
       <widget class="QWidget" name="pageSetting">
        <widget class="QPushButton" name="pushButton_5">
         <property name="geometry">
@@ -270,6 +256,12 @@
    <class>FinancialWidget</class>
    <extends>QWidget</extends>
    <header location="global">Financialwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>HonorWallWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">honorwallwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
