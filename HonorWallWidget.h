@@ -13,6 +13,7 @@ class QPieSlice;
 class QTableWidgetItem;
 class QScrollArea;
 class QGridLayout;
+class ClickableLabel;
 
 constexpr int imgH = 500;
 constexpr int imgW = 300;
@@ -30,6 +31,7 @@ private:
 	void takeSQLHeader();
 	void addImageToWall(const QString& imgPath);
 	void addImageToUI(const QPixmap& pixmap);
+	void recordImages();
 private slots:
 	void addImage();
 	void modifyImage();
@@ -44,6 +46,7 @@ private:
 	QWidget* contentWidget;
 	QGridLayout* gridLayout;
 	QStringList fieldNames;
+	ClickableLabel* selectedLabel = nullptr;
 };
 
 

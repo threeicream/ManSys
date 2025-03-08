@@ -3,6 +3,8 @@
 #include "MainWindow.h"
 #include <QFile>
 #include "DataBaseManSys.h"
+#include "LoginDialog.h"
+
 
 int main(int argc, char* argv[]) {
 	//QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);//强制使用 Qt 内置文件对话框
@@ -19,7 +21,10 @@ int main(int argc, char* argv[]) {
 	else
 		qWarning() << "样式表打开失败" << stylefile.errorString();
 
-	MainWindow w;
-	w.show();
-	return /*QApplication::*/a.exec();
+	LoginDialog loginDlg;
+	while (loginDlg.exec() == QDialog::Accepted) {
+		MainWindow w;
+		w.show();
+		return /*QApplication::*/a.exec();
+	}
 }
