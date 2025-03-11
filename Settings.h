@@ -13,6 +13,7 @@ public:
 	bool isLoginCacheEnabled() const;
 	void setLoginCacheEnabled(bool enabled);
 	QString getLastLoginUser() const;
+	QSettings& getQSettings() { return settings; };
 	void setLastLoginUser(const QString& user);
 
 	// 禁止拷贝构造函数和赋值运算符，确保单例只有一个实例

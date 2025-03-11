@@ -1,7 +1,7 @@
 ﻿#include "Settings.h"
 
 Settings::Settings(QWidget *parent)
-	: QWidget(parent), settings("config.ini", QSettings::IniFormat)
+	: QWidget(parent), settings("config.ini", QSettings::IniFormat)//保存在ini文件中
 {
 }
 
@@ -18,7 +18,7 @@ Settings& Settings::getInstance()
 
 QString Settings::getDatabasePath() const
 {
-	return settings.value("database/path", "").toString(); // 默认值为空字符串
+	return settings.value("database/path", "D:/Vs/project/ManSys/sql/ManageSys.db").toString(); // 默认值为空字符串
 }
 
 void Settings::setDatabasePath(const QString& path)

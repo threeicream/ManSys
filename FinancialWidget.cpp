@@ -420,7 +420,7 @@ void FinancialWidget::updateChart()
 	series->attachAxis(axisx);
 	// 计算刻度数量
 	int numTicks = QDate(startDate).daysTo(endDate) + 1; // 包括起始日期和结束日期
-	axisx->setTickCount(numTicks); // 设置刻度数量
+	axisx->setTickCount(numTicks); // 设置x轴刻度数量
 
 	QValueAxis* axisy = new QValueAxis();
 	axisy->setTitleText("金额（元）");

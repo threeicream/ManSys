@@ -182,6 +182,7 @@ QCheckBox::indicator:unchecked {
 QCheckBox::indicator:checked {
     background-color: #4d80cc;
     border: 1px solid #4d80cc;
+    image:url(:/MainWindow/image/choose.png);/*打勾图标*/
 }
 
 QCheckBox::indicator:hover {
