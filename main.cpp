@@ -4,6 +4,7 @@
 #include <QFile>
 #include "DataBaseManSys.h"
 #include "LoginDialog.h"
+#include "Settings.h"
 
 
 int main(int argc, char* argv[]) {
@@ -11,6 +12,7 @@ int main(int argc, char* argv[]) {
 	QApplication a(argc, argv);
 
 	DataBaseManSys::Instance();
+	Settings::getInstance();
 
 	QFile stylefile(":/MainWindow/stylesheet/style1.qss");
 	if (stylefile.open(QFile::ReadOnly)) {

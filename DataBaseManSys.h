@@ -12,10 +12,11 @@ public:
 	bool openDataBase(const QString& path);
 	QString getDataBasePath()const;
 	void setDataBasePath(const QString& path);
+	bool copyDatabase(const QString& sourcePath, const QString& destinationPath);
 private:
 	explicit DataBaseManSys(QObject* parent = nullptr);
 	~DataBaseManSys();
 private:
 	QSqlDatabase db;
-	QString dbPath = /*(QString)*/DATABASE_PATH /*+ "/sql/ManageSys.db"*/;
+	QString dbPath /*= (QString)DATABASE_PATH*/ /*+ "/sql/ManageSys.db"*/;
 };

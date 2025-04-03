@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QFileDialog>
 #include "Settings.h"
+#include "DataBaseManSys.h"
 #include <QMessageBox>
 #include <QSqlQuery>
 #include <QSqlError>
@@ -88,7 +89,8 @@ bool SystemSettingWidget::validatePasswordChange()
 
 void SystemSettingWidget::browseDatabasePath()
 {
-	QString path = QFileDialog::getOpenFileName(this, "选择数据库路径", "", "db(*.db *.db3 *.sqlite)");
+	QString dbpath = Settings::getInstance().getDatabasePath();
+	QString path = QFileDialog::getOpenFileName(this, "选择数据库路径", dbpath, "db(*.db *.db3 *.sqlite);;all(*.*)");
 	if (!path.isEmpty())
 		dbPathEdit->setText(path);
 }
@@ -115,14 +117,15 @@ void SystemSettingWidget::updatePassword()
 void SystemSettingWidget::saveSettings()
 {
 	QString newDbPath = dbPathEdit->text();
-	Settings::getInstance().setDatabasePath(newDbPath);
-	Settings::getInstance().setLoginCacheEnabled(cacheCheckBox->isChecked());
 
 	if (!newPwdEdit->text().isEmpty()) {
 		updatePassword();
 	}
 	if (newDbPath != Settings::getInstance().getDatabasePath()) {
 		QMessageBox::information(this, "提示", "数据库路径将在重启后修改");
+		Settings::getInstance().setDatabasePath(newDbPath);
+		Settings::getInstance().setLoginCacheEnabled(cacheCheckBox->isChecked());
+		DataBaseManSys::Instance().setDataBasePath(newDbPath);
 	}
 }
 
